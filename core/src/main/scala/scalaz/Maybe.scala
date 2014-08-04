@@ -1,9 +1,11 @@
 package scalaz
 
+import scala.annotation.unchecked.uncheckedVariance
 import scala.util.control.NonFatal
 import scala.reflect.ClassTag
 import Ordering._
 import Isomorphism.{<~>, IsoFunctorTemplate}
+import Liskov.{<~<, refl}
 
 /** An optional value
  *
@@ -144,6 +146,11 @@ sealed abstract class Maybe[A] {
    * empty value for type `F` */
   final def orEmpty[F[_]](implicit F: Applicative[F], G: PlusEmpty[F]): F[A] =
     cata(F.point(_), G.empty)
+
+  // Covariant widening is sound
+  def widen[B](implicit ev: A <~< B): Maybe[B] =
+    ev.subst[({type λ[-α] = Maybe[α @uncheckedVariance] <~< Maybe[B]})#λ](refl)(this)
+
 }
 
 object Maybe extends MaybeInstances with MaybeFunctions {
